@@ -95,22 +95,7 @@ Opciones sugeridas:
 
 Debe usar pidfd_open y pidfd_send_signal.""", file=out)
 
-
-def cmd_ps(argv: list[str]) -> int:
-    if argv and is_help_arg(argv[0]):
-        print_ps_help()
-        return SAPO_OK
-
-    show_all = False
-    for arg in argv:
-        if arg in {"-a", "--all"}:
-            show_all = True
-        else:
-            print(f"sapo ps: opcion desconocida: {arg}", file=sys.stderr)
-            print_ps_help(sys.stderr)
-            return SAPO_USAGE
-        
-    my_uid = os.getuid()
+def get_processes(uid_searched: int | None = None) -> list[dict]: 
     processes = []  # lista de diccionarios con info de procesos
 
     try:
@@ -136,7 +121,7 @@ def cmd_ps(argv: list[str]) -> int:
                     elif line.startswith("Name:"):
                         process_name = line.split()[1]
 
-            if not show_all and process_uid != my_uid:
+            if uid_searched is not None and process_uid != uid_searched:
                 continue
 
             user_name = ""
@@ -164,6 +149,26 @@ def cmd_ps(argv: list[str]) -> int:
         except Exception as e:
             print(f"sapo ps: error al procesar PID {pid}: {e}", file=sys.stderr)
             continue
+
+    return processes
+
+
+def cmd_ps(argv: list[str]) -> int:
+    if argv and is_help_arg(argv[0]):
+        print_ps_help()
+        return SAPO_OK
+
+    show_all = False
+    for arg in argv:
+        if arg in {"-a", "--all"}:
+            show_all = True
+        else:
+            print(f"sapo ps: opcion desconocida: {arg}", file=sys.stderr)
+            print_ps_help(sys.stderr)
+            return SAPO_USAGE
+        
+    my_uid = os.getuid()
+    processes = get_processes(None if show_all else my_uid)
 
     print(f"{'PID':>8} {'USER':>12} {'NAME':>20} {'COMMAND'}")
 
