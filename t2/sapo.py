@@ -11,6 +11,7 @@ from __future__ import annotations
 import sys
 import os
 import pwd
+import fnmatch
 
 SAPO_OK = 0
 SAPO_ERROR = 1
@@ -67,7 +68,8 @@ def print_find_help(out=sys.stdout) -> None:
   sapo find <pattern>
 
 Busca procesos cuyo nombre o comando coincidan con el patron.
-Documenten si usan regex o globs.""", file=out)
+Soporta el uso de globs (ej: *python*, bash?, init*),
+para usarlo debe poner el patron entre comillas.""", file=out)
 
 
 def print_files_help(out=sys.stdout) -> None:
@@ -186,6 +188,25 @@ def cmd_find(argv: list[str]) -> int:
         print("sapo find: falta <pattern>", file=sys.stderr)
         print_find_help(sys.stderr)
         return SAPO_USAGE
+    
+    pattern = argv[0]
+
+    processes = get_processes()
+    coincidences = []
+    for proc in processes:
+        if fnmatch.fnmatch(proc["name"], pattern) or fnmatch.fnmatch(proc["command"], pattern):
+            coincidences.append(proc)
+
+    if not coincidences:
+        print(f"sapo find: no se encontraron procesos que coincidan con '{pattern}'", file=sys.stderr)
+        return SAPO_OK
+    
+    print(f"{'PID':>8} {'USER':>12} {'NAME':>20} {'COMMAND'}")
+
+    for proc in coincidences:
+        print(f"{proc['pid']:>8} {proc['user']:>12} {proc['name']:>20} {proc['command']}")
+
+    return SAPO_OK
 
     pattern = argv[0]
     # TODO:
