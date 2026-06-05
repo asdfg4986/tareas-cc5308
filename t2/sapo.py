@@ -208,15 +208,6 @@ def cmd_find(argv: list[str]) -> int:
 
     return SAPO_OK
 
-    pattern = argv[0]
-    # TODO:
-    # - reutilizar la lectura de procesos de sapo ps
-    # - comparar pattern contra nombre y comando
-    # - imprimir solo coincidencias
-    _ = pattern
-    print("sapo find: TODO implementar", file=sys.stderr)
-    return SAPO_ERROR
-
 
 def cmd_files(argv: list[str]) -> int:
     if argv and is_help_arg(argv[0]):
