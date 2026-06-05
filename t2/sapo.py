@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import sys
 import os
+import pwd
 
 SAPO_OK = 0
 SAPO_ERROR = 1
@@ -108,17 +109,68 @@ def cmd_ps(argv: list[str]) -> int:
             print(f"sapo ps: opcion desconocida: {arg}", file=sys.stderr)
             print_ps_help(sys.stderr)
             return SAPO_USAGE
+        
+    my_uid = os.getuid()
+    processes = []  # lista de diccionarios con info de procesos
 
-    # TODO:
-    # - recorrer /proc
-    # - detectar entradas numericas
-    # - leer /proc/<PID>/status
-    # - leer /proc/<PID>/cmdline
-    # - filtrar por UID actual salvo -a/--all
-    # - imprimir tabla
-    _ = show_all
-    print("sapo ps: TODO implementar", file=sys.stderr)
-    return SAPO_ERROR
+    try:
+        proc_entries = os.listdir("/proc")
+    except Exception as e:
+        print(f"sapo ps: error al leer /proc: {e}", file=sys.stderr)
+        return SAPO_ERROR
+    
+    for pid in proc_entries:
+        if not pid.isdigit():
+            continue
+    
+        status_path = f"/proc/{pid}/status"
+        cmdline_path = f"/proc/{pid}/cmdline"
+
+        try:
+            process_uid = -1
+            process_name = ""
+            with open(status_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("Uid:"):
+                        process_uid = int(line.split()[1])
+                    elif line.startswith("Name:"):
+                        process_name = line.split()[1]
+
+            if not show_all and process_uid != my_uid:
+                continue
+
+            user_name = ""
+            if process_uid != -1:
+                try:
+                    user_name = pwd.getpwuid(process_uid).pw_name
+                except KeyError:
+                    user_name = str(process_uid)
+
+            command = ""
+            with open(cmdline_path, "r", encoding="utf-8") as f:
+                cmd = f.read()
+                if cmd:
+                    command = cmd.replace("\0", " ").strip()
+                else:
+                    command = f"[{process_name}]"
+
+            processes.append({
+                "pid": pid,
+                "user": user_name,
+                "name": process_name,
+                "command": command,
+            })
+
+        except Exception as e:
+            print(f"sapo ps: error al procesar PID {pid}: {e}", file=sys.stderr)
+            continue
+
+    print(f"{'PID':>8} {'USER':>12} {'NAME':>20} {'COMMAND'}")
+
+    for proc in processes:
+        print(f"{proc['pid']:>8} {proc['user']:>12} {proc['name']:>20} {proc['command']}")
+
+    return SAPO_OK
 
 
 def cmd_find(argv: list[str]) -> int:
