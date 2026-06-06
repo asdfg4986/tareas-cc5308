@@ -175,7 +175,10 @@ def cmd_ps(argv: list[str]) -> int:
     print(f"{'PID':<8} {'USER':<12} {'NAME':<20} {'COMMAND'}")
 
     for proc in processes:
-        print(f"{proc['pid']:<8} {proc['user']:<12} {proc['name']:<20} {proc['command']}")
+        command_text = proc["command"]
+        if len(command_text) > 60:
+            command_text = command_text[:57] + "..."
+        print(f"{proc['pid']:<8} {proc['user']:<12} {proc['name']:<20} {command_text}")
 
     return SAPO_OK
 
@@ -204,7 +207,10 @@ def cmd_find(argv: list[str]) -> int:
     print(f"{'PID':<8} {'USER':<12} {'NAME':<20} {'COMMAND'}")
 
     for proc in coincidences:
-        print(f"{proc['pid']:<8} {proc['user']:<12} {proc['name']:<20} {proc['command']}")
+        command_text = proc["command"]
+        if len(command_text) > 60:
+            command_text = command_text[:57] + "..."
+        print(f"{proc['pid']:<8} {proc['user']:<12} {proc['name']:<20} {command_text}")
 
     return SAPO_OK
 
