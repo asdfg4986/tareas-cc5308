@@ -219,14 +219,45 @@ def cmd_files(argv: list[str]) -> int:
         return SAPO_USAGE
 
     pid = parse_pid(argv[0])
-    # TODO:
-    # - abrir /proc/<PID>/fd
-    # - recorrer entradas numericas
-    # - usar os.readlink para obtener el destino de cada FD
-    # - imprimir FD y destino
-    _ = pid
-    print("sapo files: TODO implementar", file=sys.stderr)
-    return SAPO_ERROR
+    fd_path = f"/proc/{pid}/fd"
+
+    try:
+        fd_entries = os.listdir(fd_path)
+    except FileNotFoundError:
+        print(f"sapo files: el proceso {pid} no existe o ya terminó.", file=sys.stderr)
+        return SAPO_ERROR
+    except PermissionError:
+        print(f"sapo files: permiso denegado para inspeccionar el PID {pid}.", file=sys.stderr)
+        return SAPO_ERROR
+    except OSError as e:
+        print(f"sapo files: error al acceder a {fd_path}: {e}", file=sys.stderr)
+        return SAPO_ERROR
+    
+    files = []
+    
+    for fd in fd_entries:
+        if not fd.isdigit():
+            continue
+
+        link_path = f"{fd_path}/{fd}"
+
+        try:
+            dest = os.readlink(link_path)
+            files.append({
+                "fd": fd,
+                "target": dest,
+            })
+        except Exception as e:
+            continue
+
+    files.sort(key=lambda x: x["fd"])
+
+    print(f"{'FD':<6} {'TARGET'}")
+
+    for f in files:
+            print(f"{f['fd']:<6} {f['target']}")
+
+    return SAPO_OK
 
 
 def cmd_ports(argv: list[str]) -> int:
