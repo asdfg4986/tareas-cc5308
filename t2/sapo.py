@@ -172,10 +172,10 @@ def cmd_ps(argv: list[str]) -> int:
     my_uid = os.getuid()
     processes = get_processes(None if show_all else my_uid)
 
-    print(f"{'PID':>8} {'USER':>12} {'NAME':>20} {'COMMAND'}")
+    print(f"{'PID':<8} {'USER':<12} {'NAME':<20} {'COMMAND'}")
 
     for proc in processes:
-        print(f"{proc['pid']:>8} {proc['user']:>12} {proc['name']:>20} {proc['command']}")
+        print(f"{proc['pid']:<8} {proc['user']:<12} {proc['name']:<20} {proc['command']}")
 
     return SAPO_OK
 
@@ -201,10 +201,10 @@ def cmd_find(argv: list[str]) -> int:
         print(f"sapo find: no se encontraron procesos que coincidan con '{pattern}'", file=sys.stderr)
         return SAPO_OK
     
-    print(f"{'PID':>8} {'USER':>12} {'NAME':>20} {'COMMAND'}")
+    print(f"{'PID':<8} {'USER':<12} {'NAME':<20} {'COMMAND'}")
 
     for proc in coincidences:
-        print(f"{proc['pid']:>8} {proc['user']:>12} {proc['name']:>20} {proc['command']}")
+        print(f"{proc['pid']:<8} {proc['user']:<12} {proc['name']:<20} {proc['command']}")
 
     return SAPO_OK
 
