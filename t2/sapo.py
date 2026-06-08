@@ -265,6 +265,76 @@ def cmd_files(argv: list[str]) -> int:
 
     return SAPO_OK
 
+def read_red_file(path: str, protocol: str) -> dict:
+    inodes_red = {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.readlines()[1:]  # saltar header
+            for line in lines:
+                parts = line.split()
+                if len(parts) < 10:
+                    continue
+                local_address = parts[1]
+                state = parts[3]
+                inode = parts[9]
+                try:
+                    ip_hex, port_hex = local_address.split(":")
+                    ip = ".".join(str(int(ip_hex[i:i+2], 16)) for i in range(0, 8, 2))
+                    port = int(port_hex, 16)
+                    inodes_red[inode] = {
+                        "protocol": protocol,
+                        "ip": ip,
+                        "port": port,
+                        "state": state,
+                    }
+                except Exception:
+                    continue
+    except Exception as e:
+        pass # si no se puede leer el archivo, simplemente no se agregan entradas
+
+    return inodes_red
+
+def get_inodes_processes() -> dict:
+    inodes_processes = {}
+    try:
+        pids = os.listdir("/proc")
+    except Exception as e:
+        print(f"sapo ports: error al leer /proc: {e}", file=sys.stderr)
+        return inodes_processes
+    
+    for pid in pids:
+        if not pid.isdigit():
+            continue
+
+        process_name = ""
+        try:
+            with open(f"/proc/{pid}/status", "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("Name:"):
+                        process_name = line.split()[1]
+                        break
+        except Exception as e:
+            process_name = "unknown"
+
+        fd_path = f"/proc/{pid}/fd"
+        try:
+            fds = os.listdir(fd_path)
+        except Exception as e:
+            continue
+
+        for fd in fds:
+            try:
+                link = os.readlink(f"{fd_path}/{fd}")
+                if link.startswith("socket:[") and link.endswith("]"):
+                    inode = link[8:-1]
+                    inodes_processes[inode] = {
+                        "pid": pid,
+                        "process_name": process_name,
+                    }
+            except Exception as e:
+                continue
+
+    return inodes_processes
 
 def cmd_ports(argv: list[str]) -> int:
     if argv and is_help_arg(argv[0]):
@@ -275,14 +345,48 @@ def cmd_ports(argv: list[str]) -> int:
         print_ports_help(sys.stderr)
         return SAPO_USAGE
 
-    # TODO:
-    # - leer /proc/net/tcp y /proc/net/udp
-    # - extraer protocolo, direccion local, puerto, estado e inode
-    # - recorrer /proc/<PID>/fd de los procesos
-    # - buscar links tipo socket:[INODE]
-    # - cruzar inodes con procesos
-    print("sapo ports: TODO implementar", file=sys.stderr)
-    return SAPO_ERROR
+    tcp_connections = read_red_file("/proc/net/tcp", "TCP")
+    udp_connections = read_red_file("/proc/net/udp", "UDP")
+
+    all_connections = tcp_connections | udp_connections
+
+    inodes_processes = get_inodes_processes()
+
+    tcp_state_map = {
+        "01": "ESTABLISHED",
+        "02": "SYN_SENT",
+        "03": "SYN_RECV",
+        "04": "FIN_WAIT1",
+        "05": "FIN_WAIT2",
+        "06": "TIME_WAIT",
+        "07": "CLOSE",
+        "08": "CLOSE_WAIT",
+        "09": "LAST_ACK",
+        "0A": "LISTEN",
+        "0B": "CLOSING",
+    }
+
+    print(f"{'PROTO':<6} {'LOCAL_ADDRESS':<22} {'STATE':<12} {'PID/PROCESS'}")
+
+    for inode, red_info in all_connections.items():
+        protocol = red_info["protocol"]
+        ip = red_info["ip"]
+        port = red_info["port"]
+        state_hex = red_info["state"]
+        
+        address = f"{ip}:{port}"
+
+        state = tcp_state_map.get(state_hex, state_hex) if protocol == "TCP" else ""
+
+        process_info = inodes_processes.get(inode)
+        if process_info:
+            process_text = f"{process_info['pid']}/{process_info['process_name']}"
+        else:
+            process_text = "unknown"
+
+        print(f"{protocol:<6} {address:<22} {state:<12} {process_text}")
+    
+    return SAPO_OK
 
 
 def cmd_kill(argv: list[str]) -> int:
