@@ -12,6 +12,7 @@ import sys
 import os
 import pwd
 import fnmatch
+import signal
 
 SAPO_OK = 0
 SAPO_ERROR = 1
@@ -409,15 +410,39 @@ def cmd_kill(argv: list[str]) -> int:
         return SAPO_USAGE
 
     pid = parse_pid(argv[i])
-    # TODO:
-    # - convertir signal_arg a numero de senal
-    # - abrir pidfd con os.pidfd_open o syscall equivalente
-    # - enviar senal con signal.pidfd_send_signal o syscall equivalente
-    # - cerrar pidfd
-    _ = (pid, signal_arg)
-    print("sapo kill: TODO implementar", file=sys.stderr)
-    return SAPO_ERROR
+    
+    sig_num = -1
+    if signal_arg.isdigit():
+        sig_num = int(signal_arg)
+    else:
+        sig_name = signal_arg.upper()
+        if not sig_name.startswith("SIG"):
+            sig_name = "SIG" + sig_name
+        try:
+            sig_num = getattr(signal, sig_name)
+        except AttributeError:
+            print(f"sapo kill: señal desconocida: {signal_arg}", file=sys.stderr)
+            return SAPO_ERROR
+        
+    try:
+        fd = os.pidfd_open(pid, 0)
 
+        try:
+            signal.pidfd_send_signal(fd, sig_num)
+        finally:
+            os.close(fd)
+
+    except ProcessLookupError:
+        print(f"sapo kill: el proceso {pid} no existe o ya terminó.", file=sys.stderr)
+        return SAPO_ERROR
+    except PermissionError:
+        print(f"sapo kill: permiso denegado para enviar señal al PID {pid}.", file=sys.stderr)
+        return SAPO_ERROR
+    except OSError as e:
+        print(f"sapo kill: error al enviar señal al PID {pid}: {e}", file=sys.stderr)
+        return SAPO_ERROR
+
+    return SAPO_OK
 
 def main(argv: list[str]) -> int:
     if len(argv) < 2 or is_help_arg(argv[1]):
