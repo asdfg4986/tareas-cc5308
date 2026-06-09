@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""Starter kit SAPO en Python.
-
-Este archivo entrega estructura de subcomandos y TODOs. No implementa la tarea.
-Restriccion: la implementacion final no debe invocar comandos como ps, lsof,
-ss, netstat o kill.
-"""
 
 from __future__ import annotations
 
