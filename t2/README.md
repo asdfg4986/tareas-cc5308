@@ -1,9 +1,9 @@
-# Tarea 2 — SAPO en Python (Sistema Administrador de Procesos)
+# Tarea 2 — SAPO en Python (System Analyzer for Processes and Open resources)
 
 **Autor:** Franco Iturra H.
 
 ## Descripción
-`sapo` es una herramienta de interfaz de línea de comandos (CLI) escrita en Python que emula el comportamiento de utilidades clásicas de administración de sistemas en Linux, tales como `ps`, `pgrep/find`, `lsof`, `ss`/`netstat` y `kill`. 
+`sapo` es una herramienta de interfaz de línea de comandos (CLI) escrita en Python que emula el comportamiento de comando clasicos, tales como `ps`, `pgrep/find`, `lsof`, `ss`/`netstat` y `kill`. 
 
 Esta implementación interactúa directamente con el pseudo-sistema de archivos `/proc` y utiliza llamadas al sistema nativas.
 
