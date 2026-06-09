@@ -60,8 +60,7 @@ def print_ps_help(out=sys.stdout) -> None:
 
 Opciones:
   -a, --all          Muestra procesos de todos los usuarios
-
-Debe leer informacion desde /proc.""", file=out)
+""", file=out)
 
 
 def print_find_help(out=sys.stdout) -> None:
@@ -77,16 +76,14 @@ def print_files_help(out=sys.stdout) -> None:
     print("""Uso:
   sapo files <PID>
 
-Lista archivos, pipes, sockets u otros recursos abiertos por PID.
-Debe inspeccionar /proc/<PID>/fd.""", file=out)
+Lista archivos, pipes, sockets u otros recursos abiertos por PID.""", file=out)
 
 
 def print_ports_help(out=sys.stdout) -> None:
     print("""Uso:
   sapo ports
 
-Lista puertos TCP/UDP abiertos indicando el proceso asociado.
-Debe cruzar /proc/net/tcp|udp con /proc/<PID>/fd usando inodes.""", file=out)
+Lista puertos TCP/UDP abiertos indicando el proceso asociado.""", file=out)
 
 
 def print_kill_help(out=sys.stdout) -> None:
@@ -95,8 +92,7 @@ def print_kill_help(out=sys.stdout) -> None:
 
 Opciones sugeridas:
   -s, --signal <SIG>  Senal a enviar. Ej: TERM, KILL, 15, 9
-
-Debe usar pidfd_open y pidfd_send_signal.""", file=out)
+""", file=out)
 
 def get_processes(uid_searched: int | None = None) -> list[dict]: 
     processes = []  # lista de diccionarios con info de procesos
