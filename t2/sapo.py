@@ -392,13 +392,28 @@ def cmd_kill(argv: list[str]) -> int:
         return SAPO_OK
 
     signal_arg = "TERM"
+    list_signals = False
     i = 0
     while i < len(argv):
         if argv[i] in {"-s", "--signal"} and i + 1 < len(argv):
             signal_arg = argv[i + 1]
             i += 2
+        elif argv[i] in {"-l", "--list"}:
+            list_signals = True
+            i += 1
         else:
             break
+
+    if list_signals:
+        signals = sorted([s.name for s in signal.valid_signals() if hasattr(s, 'name')])
+        for idx, sig in enumerate(signals, start=1):
+            short_name = sig.replace("SIG", "")
+            print(f"{short_name:>8}", end="")
+            if idx % 5 == 0:
+                print()
+
+        print()
+        return SAPO_OK
 
     if len(argv) - i != 1:
         print("sapo kill: falta <PID>", file=sys.stderr)
