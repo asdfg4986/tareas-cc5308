@@ -35,7 +35,7 @@ Ademas de soportar la ejecucion de cualquier comando binario del sistema, la she
 
 **1. Navegacion de directorios (cd)**
 - cd: Redirige automaticamente al directorio principal del usuario ($HOME).
--cd -: Regresa al directorio de trabajo anterior, llevando un registro del estado previo del sistema.
+- cd -: Regresa al directorio de trabajo anterior, llevando un registro del estado previo del sistema.
 - cd <ruta>: Navega a la ruta especificada.
 
 **2. Gestion del Entorno (export y unset)**
